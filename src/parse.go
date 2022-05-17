@@ -14,7 +14,7 @@ func tokenFromKeyword(k keyword) token {
 
 func tokenFromSymbol(s symbol) token {
 	return token{
-		Kind:  KeywordKind,
+		Kind:  SymbolKind,
 		Value: string(s),
 	}
 }
@@ -38,7 +38,7 @@ func helpMessage(tokens []*token, cursor uint, msg string) {
 	fmt.Printf("[%d,%d]: %s, got: %s\n", c.Loc.line, c.Loc.col, msg, c.Value)
 }
 
-func parse(source string) (*ast, error) {
+func Parse(source string) (*ast, error) {
 	tokens, err := lex(source)
 	if err != nil {
 		return nil, err
@@ -72,13 +72,13 @@ func parse(source string) (*ast, error) {
 	return &a, nil
 }
 
-func parseStatements(tokens []*token, initialCursor uint, delimiter token) (*statement, uint, bool) {
+func parseStatements(tokens []*token, initialCursor uint, delimiter token) (*Statement, uint, bool) {
 	cursor := initialCursor
 
 	semiColonToken := tokenFromSymbol(SemiColon)
 	slct, newCursor, ok := parseSelectStatement(tokens, cursor, semiColonToken)
 	if ok {
-		return &statement{
+		return &Statement{
 			Kind:   SelectAstKind,
 			Select: slct,
 		}, newCursor, true
@@ -86,7 +86,7 @@ func parseStatements(tokens []*token, initialCursor uint, delimiter token) (*sta
 
 	inst, newCursor, ok := parseInsertStatement(tokens, cursor, semiColonToken)
 	if ok {
-		return &statement{
+		return &Statement{
 			Kind:   InsertAstKind,
 			Insert: inst,
 		}, newCursor, true
@@ -94,7 +94,7 @@ func parseStatements(tokens []*token, initialCursor uint, delimiter token) (*sta
 
 	crt, newCursor, ok := parseCreateStatement(tokens, cursor, semiColonToken)
 	if ok {
-		return &statement{
+		return &Statement{
 			Kind:   CreateAstKind,
 			Create: crt,
 		}, newCursor, true
@@ -264,7 +264,7 @@ func parseInsertStatement(tokens []*token, initialCursor uint, delimiter token) 
 	}, cursor, true
 }
 
-func parseCreateStatement(tokens []*token, initialCursor uint, delimiter token) (*createStatement, uint, bool) {
+func parseCreateStatement(tokens []*token, initialCursor uint, delimiter token) (*createTableStatement, uint, bool) {
 	cursor := initialCursor
 
 	if !expectToken(tokens, cursor, tokenFromKeyword(Create)) {
@@ -302,7 +302,7 @@ func parseCreateStatement(tokens []*token, initialCursor uint, delimiter token) 
 	}
 	cursor++
 
-	return &createStatement{
+	return &createTableStatement{
 		name: *name,
 		cols: cols,
 	}, cursor, true

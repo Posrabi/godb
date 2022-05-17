@@ -1,7 +1,7 @@
 package src
 
 type ast struct {
-	Statements []*statement
+	Statements []*Statement
 }
 
 type astKind uint
@@ -12,9 +12,9 @@ const (
 	InsertAstKind
 )
 
-type statement struct {
+type Statement struct {
 	Select *selectStatement
-	Create *createStatement
+	Create *createTableStatement
 	Insert *insertStatement
 	Kind   astKind
 }
@@ -40,7 +40,7 @@ type columnDefinition struct {
 	dataType token
 }
 
-type createStatement struct {
+type createTableStatement struct {
 	name token
 	cols *[]*columnDefinition
 }

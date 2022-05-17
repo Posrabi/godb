@@ -46,6 +46,7 @@ func lexNumeric(source string, ic cursor) (*token, cursor, bool) {
 		isPeriod := c == '.'
 		isExpmarker := c == 'e'
 
+		// starting with a digit or period
 		if cur.Pointer == ic.Pointer {
 			if !isDigit && !isPeriod {
 				return nil, ic, false
@@ -61,6 +62,7 @@ func lexNumeric(source string, ic cursor) (*token, cursor, bool) {
 			}
 
 			foundPeriod = true
+			continue
 		}
 
 		if isExpmarker {
@@ -121,7 +123,9 @@ func lexCharacterDelimited(source string, ic cursor, delimiter byte) (*token, cu
 
 		if c == delimiter {
 			// SQL escapes are via double characters, not backslash.
-			if cur.Pointer+1 > uint(len(source)) || source[cur.Pointer+1] != delimiter {
+			if cur.Pointer+1 >= uint(len(source)) || source[cur.Pointer+1] != delimiter {
+				cur.Pointer++ // TODO: fix this duplicated code
+				cur.Loc.col++
 				return &token{
 					Value: string(value),
 					Loc:   ic.Loc,
@@ -226,6 +230,8 @@ func lexKeyword(source string, ic cursor) (*token, cursor, bool) {
 	}, cur, true
 }
 
+// longestMatch iter through a source string starting at the given cursor to find
+// the longest matching among the provided options.
 func longestMatch(source string, ic cursor, options []string) string {
 	var value []byte
 	var skipList []int
@@ -291,7 +297,7 @@ func lexIdentifier(source string, ic cursor) (*token, cursor, bool) {
 
 		isAlphabetical := (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
 		isNumeric := c >= '0' && c <= '9'
-		if isAlphabetical || isNumeric || c == '$' || c == ' ' {
+		if isAlphabetical || isNumeric || c == '$' || c == '_' {
 			value = append(value, c)
 			cur.Loc.col++
 			continue

@@ -42,7 +42,7 @@ type columnDefinition struct {
 
 type createStatement struct {
 	name token
-	col  *[]*columnDefinition
+	cols *[]*columnDefinition
 }
 
 type selectStatement struct {

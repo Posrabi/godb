@@ -13,13 +13,13 @@ const (
 )
 
 type Statement struct {
-	Select *selectStatement
-	Create *createTableStatement
-	Insert *insertStatement
+	Select *SelectStatement
+	Create *CreateTableStatement
+	Insert *InsertStatement
 	Kind   astKind
 }
 
-type insertStatement struct {
+type InsertStatement struct {
 	table  token
 	values *[]*expression
 }
@@ -28,10 +28,18 @@ type expressionKind uint
 
 const (
 	literal expressionKind = iota
+	binaryKind
 )
+
+type binaryExpression struct {
+	a  expression
+	b  expression
+	op token
+}
 
 type expression struct {
 	literal *token
+	binary  *binaryExpression
 	kind    expressionKind
 }
 
@@ -40,12 +48,19 @@ type columnDefinition struct {
 	dataType token
 }
 
-type createTableStatement struct {
+type CreateTableStatement struct {
 	name token
 	cols *[]*columnDefinition
 }
 
-type selectStatement struct {
-	item []*expression
-	from token
+type SelectStatement struct {
+	item  *[]*selectItem
+	from  *token
+	where *expression
+}
+
+type selectItem struct {
+	exp      *expression
+	asterisk bool
+	as       *token
 }

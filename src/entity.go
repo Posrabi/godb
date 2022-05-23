@@ -18,7 +18,19 @@ const (
 	Values keyword = "values"
 	Int    keyword = "int"
 	Text   keyword = "text"
+	Where  keyword = "where"
+	And    keyword = "and"
+	Or     keyword = "or"
+	True   keyword = "true"
+	False  keyword = "false"
 )
+
+func (k keyword) toToken() token {
+	return token{
+		kind:  KeywordKind,
+		value: string(k),
+	}
+}
 
 type symbol string
 
@@ -26,34 +38,25 @@ const (
 	SemiColon  symbol = ";"
 	Asterisk   symbol = "*"
 	Comma      symbol = ","
-	LeftParen         = "("
-	RightParen        = ")"
+	LeftParen  symbol = "("
+	RightParen symbol = ")"
+	Equal      symbol = "="
+	XEqual     symbol = "!="
+	Concat     symbol = "||"
+	Plus       symbol = "+"
 )
 
-type tokenKind uint
-
-const (
-	KeywordKind tokenKind = iota
-	SymbolKind
-	IdentifierKind
-	StringKind
-	NumericKind
-)
-
-type token struct {
-	Value string
-	Kind  tokenKind
-	Loc   location
+func (s symbol) toToken() token {
+	return token{
+		kind:  SymbolKind,
+		value: string(s),
+	}
 }
 
 type cursor struct {
-	Pointer uint
-	Loc     location
-}
-
-func (t *token) equals(other *token) bool {
-	return t.Value == other.Value && t.Kind == other.Kind
+	pointer uint
+	loc     location
 }
 
 // A lexer parses any sql command and turns it into code.
-type Lexer func(string, cursor) (*token, cursor, bool)
+type lexer func(string, cursor) (*token, cursor, bool)

@@ -1,30 +1,119 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"io"
+	"log"
 	"os"
-	"strings"
 
 	"github.com/Posrabi/godb/src"
+	"github.com/chzyer/readline"
+	"github.com/olekukonko/tablewriter"
 )
+
+func doSelect(mb src.Backend, slct *src.SelectStatement) error {
+	results, err := mb.Select(slct)
+	if err != nil {
+		return err
+	}
+
+	if len(results.Rows) == 0 {
+		log.Println("(no results)")
+		return nil
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	header := []string{}
+	for _, col := range results.Columns {
+		header = append(header, col.Name)
+	}
+	table.SetHeader(header)
+	table.SetAutoFormatHeaders(false)
+
+	rows := [][]string{}
+	for _, result := range results.Rows {
+		row := []string{}
+		for i, cell := range result {
+			typ := results.Columns[i].Type
+			s := ""
+
+			switch typ {
+			case src.IntType:
+				s = fmt.Sprintf("%d", cell.AsInt())
+			case src.TextType:
+				s = cell.AsText()
+			case src.BoolType:
+				s = "true"
+				if !cell.AsBool() {
+					s = "false"
+				}
+			}
+
+			row = append(row, s)
+		}
+		rows = append(rows, row)
+	}
+
+	table.SetBorder(false)
+	table.AppendBulk(rows)
+	table.Render()
+
+	if len(rows) == 1 {
+		log.Println("(1 result)")
+	} else {
+		log.Printf("(%d results)", len(rows))
+	}
+
+	return nil
+}
 
 func main() {
 	mb := src.NewMemoryBackend()
 
-	reader := bufio.NewReader(os.Stdin)
+	l, err := readline.NewEx(&readline.Config{
+		Prompt:          "# ",
+		HistoryFile:     "/tmp/gosql.tmp",
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer l.Close()
+
 	fmt.Println("Welcome")
+
+repl:
 	for {
 		fmt.Print("$ ")
-		text, err := reader.ReadString('\n')
-		if err != nil {
-			panic(err)
+		line, err := l.Readline()
+		if err == readline.ErrInterrupt {
+			if len(line) == 0 {
+				break
+			} else {
+				continue repl
+			}
+		} else if err == io.EOF {
+			break
 		}
-		text = strings.Replace(text, "\n", "", -1)
 
-		ast, err := src.Parse(text)
 		if err != nil {
-			panic(err)
+			log.Println("Error while reading line:", err)
+			continue repl
+		}
+
+		if line == "clear" {
+			fmt.Print("\033[H\033[2J")
+			continue repl
+		} else if line == "exit" {
+			log.Println("Exiting...")
+			break
+		}
+
+		ast, err := src.Parse(line)
+		if err != nil {
+			log.Println("Error while parsing:", err)
+			continue repl
 		}
 
 		for _, stmt := range ast.Statements {
@@ -32,52 +121,25 @@ func main() {
 			case src.CreateAstKind:
 				err = mb.CreateTable(stmt.Create)
 				if err != nil {
-					panic(err)
+					log.Println("Error creating table:", err)
+					continue repl
 				}
-				fmt.Println("ok")
 
 			case src.InsertAstKind:
 				err = mb.Insert(stmt.Insert)
 				if err != nil {
-					panic(err)
+					log.Println("Error inserting value:", err)
+					continue repl
 				}
+
 			case src.SelectAstKind:
-				results, err := mb.Select(stmt.Select)
+				err := doSelect(mb, stmt.Select)
 				if err != nil {
-					panic(err)
+					log.Println("Error selecting values:", err)
+					continue repl
 				}
-
-				for _, col := range results.Columns {
-					fmt.Printf("| %s", col.Name)
-				}
-				fmt.Println("|")
-
-				for i := 0; i < 20; i++ {
-					fmt.Printf("=")
-				}
-				fmt.Println()
-
-				for _, result := range results.Rows {
-					fmt.Printf("|")
-
-					for i, cell := range result {
-						typ := results.Columns[i].Type
-						s := ""
-						switch typ {
-						case src.IntType:
-							s = fmt.Sprintf("%d", cell.AsInt())
-						case src.TextType:
-							s = cell.AsText()
-						}
-
-						fmt.Printf("%s | ", s)
-					}
-
-					fmt.Println()
-				}
-
-				fmt.Println("ok")
 			}
+			fmt.Println("ok")
 		}
 	}
 }

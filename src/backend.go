@@ -7,11 +7,13 @@ type columnType uint
 const (
 	TextType columnType = iota
 	IntType
+	BoolType
 )
 
 type Cell interface {
 	AsText() string
 	AsInt() int32
+	AsBool() bool
 }
 
 type Results struct {
@@ -29,10 +31,12 @@ var (
 	InvalidSelectItem  = errors.New("Select item is not valid")
 	InvalidDatatype    = errors.New("Invalid datatype")
 	MissingValues      = errors.New("Missing values")
+	InvalidCell        = errors.New("Cell is invalid")
+	InvalidOperands    = errors.New("Operands are invalid")
 )
 
 type Backend interface {
-	CreateTable(*createTableStatement) error
-	Insert(*insertStatement) error
-	Select(*selectStatement)
+	CreateTable(*CreateTableStatement) error
+	Insert(*InsertStatement) error
+	Select(*SelectStatement) (*Results, error)
 }

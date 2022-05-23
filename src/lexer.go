@@ -107,6 +107,10 @@ func lexNumeric(source string, ic cursor) (*token, cursor, bool) {
 	}, cur, true
 }
 
+func lexString(source string, ic cursor) (*token, cursor, bool) {
+	return lexCharacterDelimited(source, ic, '\'')
+}
+
 func lexCharacterDelimited(source string, ic cursor, delimiter byte) (*token, cursor, bool) {
 	cur := ic
 
@@ -147,10 +151,6 @@ func lexCharacterDelimited(source string, ic cursor, delimiter byte) (*token, cu
 	}
 
 	return nil, ic, false
-}
-
-func lexString(source string, ic cursor) (*token, cursor, bool) {
-	return lexCharacterDelimited(source, ic, '\'')
 }
 
 func lexSymbol(source string, ic cursor) (*token, cursor, bool) {
@@ -250,51 +250,6 @@ func lexKeyword(source string, ic cursor) (*token, cursor, bool) {
 	}, cur, true
 }
 
-// longestMatch iter through a source string starting at the given cursor to find
-// the longest matching among the provided options.
-func longestMatch(source string, ic cursor, options []string) string {
-	var value []byte
-	var skipList []int
-	var match string
-
-	cur := ic
-
-	for cur.pointer < uint(len(source)) {
-		value = append(value, strings.ToLower(string(source[cur.pointer]))...)
-		cur.pointer++
-
-	match:
-		for i, option := range options {
-			for _, skip := range skipList {
-				if i == skip {
-					continue match
-				}
-			}
-
-			if option == string(value) {
-				skipList = append(skipList, i)
-				if len(option) > len(match) {
-					match = option
-				}
-
-				continue
-			}
-
-			sharesPrefix := string(value) == option[:cur.pointer-ic.pointer]
-			tooLong := len(value) > len(option)
-			if tooLong || !sharesPrefix {
-				skipList = append(skipList, i)
-			}
-		}
-
-		if len(skipList) == len(options) {
-			break
-		}
-	}
-
-	return match
-}
-
 func lexIdentifier(source string, ic cursor) (*token, cursor, bool) {
 	if token, newCursor, ok := lexCharacterDelimited(source, ic, '"'); ok {
 		return token, newCursor, true
@@ -335,5 +290,57 @@ func lexIdentifier(source string, ic cursor) (*token, cursor, bool) {
 		loc:   ic.loc,
 		kind:  IdentifierKind,
 	}, cur, true
+}
 
+// longestMatch iter through a source string starting at the given cursor to find
+// the longest matching option among the provided options.
+//
+// At a high level, it reads every single byte from source, then check and eliminates all non matching options, keeping options that shares the prefix.
+// If there is a match that is longer than the current match, match is updated.
+func longestMatch(source string, ic cursor, options []string) string {
+	var value []byte
+	var skipList []int // what options to skip for next iteration
+	var match string
+
+	cur := ic
+
+	for cur.pointer < uint(len(source)) {
+		value = append(value, strings.ToLower(string(source[cur.pointer]))...)
+		cur.pointer++
+
+	match:
+		for i, option := range options {
+			for _, skip := range skipList {
+				if i == skip {
+					continue match
+				}
+			}
+
+			// if match
+			if option == string(value) {
+				skipList = append(skipList, i)
+				// updates match
+				if len(option) > len(match) {
+					match = option
+				}
+
+				continue
+			}
+
+			// if shares a prefix, continues checking the next byte.
+			sharesPrefix := string(value) == option[:cur.pointer-ic.pointer]
+			tooLong := len(value) > len(option)
+			// if too long or does not share any prefix, skip this option.
+			if tooLong || !sharesPrefix {
+				skipList = append(skipList, i)
+			}
+		}
+
+		// if skipList contains all available options, break out of loop.
+		if len(skipList) == len(options) {
+			break
+		}
+	}
+
+	return match
 }

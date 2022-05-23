@@ -223,6 +223,7 @@ func lexKeyword(source string, ic cursor) (*token, cursor, bool) {
 		Or,
 		True,
 		False,
+		PrimaryKey,
 	}
 
 	var options []string

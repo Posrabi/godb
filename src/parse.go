@@ -216,9 +216,16 @@ func parseColumnDefinitions(tokens []*token, initialCursor uint, delimiter token
 		}
 		cursor = newCursor
 
+		primaryKey := false
+		_, cursor, ok = parseToken(tokens, cursor, PrimaryKey.toToken())
+		if ok {
+			primaryKey = true
+		}
+
 		cds = append(cds, &columnDefinition{
-			name:     *id,
-			dataType: *ty,
+			name:       *id,
+			dataType:   *ty,
+			primaryKey: primaryKey,
 		})
 	}
 

@@ -8,21 +8,22 @@ type location struct {
 type keyword string
 
 const (
-	Select keyword = "select"
-	From   keyword = "from"
-	As     keyword = "as"
-	Table  keyword = "table"
-	Create keyword = "create"
-	Insert keyword = "insert"
-	Into   keyword = "into"
-	Values keyword = "values"
-	Int    keyword = "int"
-	Text   keyword = "text"
-	Where  keyword = "where"
-	And    keyword = "and"
-	Or     keyword = "or"
-	True   keyword = "true"
-	False  keyword = "false"
+	Select     keyword = "select"
+	From       keyword = "from"
+	As         keyword = "as"
+	Table      keyword = "table"
+	Create     keyword = "create"
+	Insert     keyword = "insert"
+	Into       keyword = "into"
+	Values     keyword = "values"
+	Int        keyword = "int"
+	Text       keyword = "text"
+	Where      keyword = "where"
+	And        keyword = "and"
+	Or         keyword = "or"
+	True       keyword = "true"
+	False      keyword = "false"
+	PrimaryKey keyword = "primary key"
 )
 
 func (k keyword) toToken() token {
@@ -35,15 +36,19 @@ func (k keyword) toToken() token {
 type symbol string
 
 const (
-	SemiColon  symbol = ";"
-	Asterisk   symbol = "*"
-	Comma      symbol = ","
-	LeftParen  symbol = "("
-	RightParen symbol = ")"
-	Equal      symbol = "="
-	XEqual     symbol = "!="
-	Concat     symbol = "||"
-	Plus       symbol = "+"
+	SemiColon      symbol = ";"
+	Asterisk       symbol = "*"
+	Comma          symbol = ","
+	LeftParen      symbol = "("
+	RightParen     symbol = ")"
+	Equal          symbol = "="
+	XEqual         symbol = "!="
+	Greater        symbol = ">"
+	GreaterOrEqual symbol = ">="
+	Less           symbol = "<"
+	LessOrEqual           = "<="
+	Concat         symbol = "||"
+	Plus           symbol = "+"
 )
 
 func (s symbol) toToken() token {
